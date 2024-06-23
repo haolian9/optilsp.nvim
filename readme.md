@@ -21,8 +21,7 @@ the official vim.lsp not fits my need well, but thanks to the flexiblity of lua 
 * fuzzy-matching on pre-vim.fn.complete() phase
 * removed change.kind={create,delete} support in lsp.util.apply_workspace_edit
     * as it's has no checking on these changes which may cause security risks, eg: `rm -rf $HOME`
-    * some lang servers may run on the net
-    * some lang servers works like a proxy/forward server
+    * some lang server may malicious with/out intention which run on the net or work like a proxy/forward server
     * there could be bug in a lang server
 
 
