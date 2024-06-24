@@ -6,8 +6,8 @@ local strlib = require("infra.strlib")
 
 local open_floatwin = require("optilsp.monkeypatch.open_floatwin")
 
+local log = logging.newlogger("optilsp.hover", "info")
 local lsp = vim.lsp
-local log = logging.newlogger("optilsp.handlers.hover", "info")
 
 ---@type {[string]: fun(str: string): fun(): string?}
 local Spliter = {}
@@ -24,7 +24,7 @@ do
 
     local source
     source = strlib.iter_splits(str, "\n")
-    source = itertools.filter(function(line) return not is_mark(line) end, source)
+    source = itertools.filter(source, function(line) return not is_mark(line) end)
 
     local blank_count = 0
 
@@ -32,10 +32,15 @@ do
       for line in source do
         if line == "" then
           blank_count = blank_count + 1
-          -- no 2+ blank lines
-          if blank_count == 1 then return line end
+          if blank_count > 1 then
+            --continue
+          else -- no 2+ blank lines
+            return line
+          end
         elseif strlib.startswith(line, "@*param*") then
-          -- lua-langserver specific
+          blank_count = 1
+          return line
+        elseif strlib.startswith(line, "@*return*") then
           blank_count = 1
           return line
         else
@@ -51,7 +56,7 @@ do
 
     local source
     source = strlib.iter_splits(str, "\n")
-    source = itertools.filter(function(line) return not is_mark(line) end, source)
+    source = itertools.filter(source, function(line) return not is_mark(line) end)
 
     local blank_count = 0
 

@@ -1,13 +1,20 @@
 local protocol = require("vim.lsp.protocol")
 local lsputil = require("vim.lsp.util")
 
-local itertools = require("infra.itertools")
+local its = require("infra.its")
 local jelly = require("infra.jellyfish")("optilsp.rename", "debug")
+local logging = require("infra.logging")
 local ni = require("infra.ni")
 
 local puff = require("puff")
+
+local log = logging.newlogger("optilsp.rename", "info")
 local Methods = protocol.Methods
 
+---@param bufnr integer
+---@param range {start: {character:integer, line:integer}, ['end']: {character:integer, line:integer}}
+---@param offset_encoding string
+---@return string
 local function get_text_at_range(bufnr, range, offset_encoding)
   local start_lnum = range.start.line
   local start_col = lsputil._get_line_byte_from_position(bufnr, range.start, offset_encoding)
@@ -34,7 +41,7 @@ end
 
 ---@param ctx optilsp.rename.Context
 local function direct_routine(ctx)
-  puff.input({ prompt = "rename", default = ctx.advised_name or ctx.cword }, function(new_name)
+  puff.input({ icon = "🔄", prompt = "rename", default = ctx.advised_name or ctx.cword }, function(new_name)
     if new_name == nil or new_name == "" then return end
     ctx.new_name = new_name
     rename(ctx)
@@ -47,15 +54,16 @@ local function preapre_routine(ctx)
   ctx.client.request(Methods.textDocument_prepareRename, params, function(err, result)
     if err then return jelly.warn("Error on prepareRename: " .. (err.message or "")) end
     if result == nil then return jelly.warn("Nothing to rename") end
+    log.debug("prepare result: %s", result)
 
     local advised_name
     -- result: Range | { range: Range, placeholder: string }
     if result.placeholder then
       advised_name = result.placeholder
     elseif result.start then
-      advised_name = get_text_at_range(result, ctx.client.offset_encoding)
+      advised_name = get_text_at_range(ctx.bufnr, result, ctx.client.offset_encoding)
     elseif result.range then
-      advised_name = get_text_at_range(result.range, ctx.client.offset_encoding)
+      advised_name = get_text_at_range(ctx.bufnr, result.range, ctx.client.offset_encoding)
     end
     ctx.advised_name = advised_name
 
@@ -79,10 +87,11 @@ return function(new_name, opts)
 
   local client
   do
-    local clients = vim.lsp.get_clients({ bufnr = bufnr, method = Methods.textDocument_rename, name = opts.name })
-    if opts.filter then clients = itertools.filter(opts.filter, clients) end
+    local clients = its(vim.lsp.get_clients({ bufnr = bufnr, method = Methods.textDocument_rename, name = opts.name })) --
+      :filter(opts.filter)
+      :tolist()
     if #clients == 0 then vim.info("no available langserver") end
-    if #clients ~= 1 then return jelly.warn("too many langservers") end
+    if #clients > 1 then return jelly.warn("too many langservers") end
     client = clients[1]
   end
 
