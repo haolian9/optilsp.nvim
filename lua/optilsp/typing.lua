@@ -1,3 +1,5 @@
+---@meta
+
 ---based on lsp spec 3.16
 
 local M = {}
@@ -186,8 +188,6 @@ do
     range = { ["end"] = { character = 15, line = 549 }, start = { character = 11, line = 549 } },
     uri = "file:///usr/include/stdio.h",
   }
-  ---@diagnostic disable-next-line: cast-local-type
-  Definition = nil
 end
 
 do
@@ -211,8 +211,6 @@ do
     activeParameter = 0,
     activeSignature = 0,
   }
-  ---@diagnostic disable-next-line: cast-local-type
-  Result = nil
 end
 
 return M
