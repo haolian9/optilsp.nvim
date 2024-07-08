@@ -27,7 +27,6 @@ do
   ---@field insert  optilsp.Range
   ---@field replace optilsp.Range
 
-  ---todo: complete me
   ---@class optilsp.CompItemTag
 
   ---@class optilsp.MarkupContent

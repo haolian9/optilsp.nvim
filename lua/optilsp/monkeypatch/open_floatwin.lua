@@ -99,7 +99,7 @@ return function(contents, syntax, opts)
   end
 
   if #opts.close_events > 0 then --auto-close
-    local aug = augroups.BufAugroup(bufnr, true)
+    local aug = augroups.BufAugroup(bufnr, "optilsp.floatwin", true)
     ni.create_autocmd(opts.close_events, {
       group = aug.group,
       buffer = source_bufnr,
