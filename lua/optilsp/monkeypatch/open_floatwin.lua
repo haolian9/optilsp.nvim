@@ -1,15 +1,12 @@
 local augroups = require("infra.augroups")
 local Ephemeral = require("infra.Ephemeral")
 local feedkeys = require("infra.feedkeys")
+local mi = require("infra.mi")
 local prefer = require("infra.prefer")
 local strlib = require("infra.strlib")
 local log = require("infra.logging").newlogger("optilsp.open_floatwin", "info")
 
 local ni = require("infra.ni")
-
----@param winid integer
----@return boolean
-local function is_landwin(winid) return ni.win_get_config(winid).relative == "" end
 
 ---@param winid integer
 ---@return boolean
@@ -51,7 +48,7 @@ return function(contents, syntax, opts)
   local source_bufnr = ni.win_get_buf(source_winid)
 
   --set the landwin free
-  if is_valid_win(winid) and is_landwin(winid) then
+  if is_valid_win(winid) and mi.win_is_landed(winid) then
     bufnr, winid, focus_id = -1, -1, nil
   end
 
@@ -106,7 +103,7 @@ return function(contents, syntax, opts)
       once = true,
       callback = function()
         if not (winid and ni.win_is_valid(winid)) then return end
-        if is_landwin(winid) then return end --dont close a landwin
+        if mi.win_is_landed(winid) then return end --dont close a landwin
         local old_winid = winid
         winid, bufnr, focus_id = -1, -1, nil
         vim.schedule(function() --schedule to avoid E565
