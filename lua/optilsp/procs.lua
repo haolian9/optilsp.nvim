@@ -11,7 +11,7 @@ local beckon_select = require("beckon.select")
 
 local lsp = vim.lsp
 
-local aug = augroups.Augroup("monitor-lsp-proc")
+local aug = augroups.Augroup("optilsp://procs")
 
 ---NB: clients could be killed anywhere, then clientid becomes invalid
 ---@type {[integer]: integer} @{clientid: timestamp}
