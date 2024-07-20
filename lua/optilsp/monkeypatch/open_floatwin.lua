@@ -3,6 +3,7 @@ local Ephemeral = require("infra.Ephemeral")
 local feedkeys = require("infra.feedkeys")
 local mi = require("infra.mi")
 local prefer = require("infra.prefer")
+local rifts = require("infra.rifts")
 local strlib = require("infra.strlib")
 local log = require("infra.logging").newlogger("optilsp.open_floatwin", "info")
 
@@ -71,7 +72,7 @@ return function(contents, syntax, opts)
 
   focus_id = opts.focus_id
 
-  bufnr = Ephemeral({ handyclose = true }, contents)
+  bufnr = Ephemeral({ namepat = "optilsp://{bufnr}", handyclose = true }, contents)
 
   do --open win
     local max_width = ni.win_get_width(source_winid)
@@ -88,7 +89,7 @@ return function(contents, syntax, opts)
     width = math.min(width, max_width)
     log.debug("width=%d, height=%d", width, height)
 
-    winid = ni.open_win(bufnr, false, { relative = "cursor", row = 1, col = 0, width = width, height = height })
+    winid = rifts.open.win(bufnr, false, { relative = "cursor", row = 1, col = 0, width = width, height = height })
 
     local wo = prefer.win(winid)
     wo.foldenable = false

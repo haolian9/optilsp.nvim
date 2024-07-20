@@ -13,7 +13,7 @@ local log = logging.newlogger("optilsp.hdr_sign", "info")
 local function trim_inline_ln(lines)
   return its(lines) --
     :map(function(el)
-      if not strlib.find(el, "\n") then return el end
+      if not strlib.contains(el, "\n") then return el end
       local result = el
       result = string.gsub(result, "\n +", " ")
       result = string.gsub(result, "\n", "")

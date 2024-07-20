@@ -47,7 +47,7 @@ do
     if compitem.insertText == nil then return jelly.debug("no insertText") end
     if compitem.insertTextFormat ~= 2 then return jelly.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
     --workaround of https://github.com/LuaLS/lua-language-server/issues/2312
-    if strlib.find(compitem.insertText, "$") == nil then return jelly.debug("has no $ sign") end
+    if not strlib.contains(compitem.insertText, "$") then return jelly.debug("has no $ sign") end
 
     return compitem.insertText
   end
@@ -58,7 +58,7 @@ do
     if compitem.textEdit == nil then return jelly.debug("no textEdit") end
     if compitem.insertTextFormat ~= 2 then return jelly.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
     --workaround of https://github.com/LuaLS/lua-language-server/issues/2312
-    if strlib.find(compitem.textEdit.newText, "$") == nil then return jelly.debug("has no $ sign") end
+    if not strlib.contains(compitem.textEdit.newText, "$") then return jelly.debug("has no $ sign") end
 
     return compitem.textEdit.newText
   end
