@@ -36,7 +36,7 @@ do
 
     local insert_col = cursor.col - #inserted
 
-    parrot.expand_external_chirp(chirp, winid, { lnum = cursor.lnum, col = insert_col, col_end = cursor.col })
+    parrot.external_expand(chirp, winid, { lnum = cursor.lnum, col = insert_col, col_end = cursor.col })
 
     return true
   end
