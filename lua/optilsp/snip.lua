@@ -95,7 +95,7 @@ end
 function M.init()
   M.init = nil
 
-  local aug = augroups.Augroup("parrot://lsp_snippet")
+  local aug = augroups.Augroup("optilsp://snip")
   aug:repeats("CompleteDone", { callback = on_complete_done })
 end
 
