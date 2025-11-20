@@ -34,7 +34,9 @@ local bufnr, winid, focus_id = -1, -1, nil
 
 ---customize:
 ---* no syntax/style/highlights
----* always &wrap
+---* &wrap, &nofoldenable
+---* no auto-close when win landed
+---* default close_events
 ---
 ---@param contents string[]
 ---@param opts optilsp.open_floatwin.Opts

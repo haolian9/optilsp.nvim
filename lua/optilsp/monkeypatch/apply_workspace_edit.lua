@@ -2,7 +2,8 @@ local lsputil = require("vim.lsp.util")
 
 local jelly = require("infra.jellyfish")("optilsp.apply_edits", "debug")
 
---- Applies a `WorkspaceEdit`.
+---customize:
+---* disallow create/delete change
 ---
 ---@param workspace_edit table `WorkspaceEdit`
 ---@param offset_encoding string utf-8|utf-16|utf-32

@@ -80,8 +80,8 @@ function M.expires(expire_time)
 
   for _, client in ipairs(clients) do
     detached_since[client.id] = nil
-    --todo: since client.stop() is not done immediately, there could be race conditions
-    client.stop(true)
+    --concern: since client.stop() is not done immediately, there could be race conditions
+    client:stop(true)
   end
 end
 
@@ -109,7 +109,7 @@ do
       table.insert(client._on_exit_cbs, vim.schedule_wrap(start))
 
       jelly.debug("stopping client#%d", client.id)
-      client.stop(true)
+      client:stop(true)
     end)
   end
 end

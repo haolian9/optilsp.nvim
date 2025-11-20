@@ -29,7 +29,8 @@ do
   local function extract_lines(bufnr, compitem)
     local langser
     do
-      local clients = vim.lsp.get_active_clients({ bufnr = bufnr })
+      local clients = vim.lsp.get_clients({ bufnr = bufnr })
+      --todo: v0.11 - multiple lsp clients
       assert(#clients == 1, "suppose there is only one active langserver")
       langser = clients[1].name
     end

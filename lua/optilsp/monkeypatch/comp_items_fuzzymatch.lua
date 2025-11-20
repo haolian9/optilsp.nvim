@@ -34,7 +34,7 @@ local function get_completion_word(item)
   return item.label
 end
 
---rewrite of vim.lsp._completion._lsp_to_complete_items
+--rewrite of vim.lsp.completion._lsp_to_complete_items
 return function(result, prefix)
   ---* [x] case-insensitive
   ---* [x] fuzzy
