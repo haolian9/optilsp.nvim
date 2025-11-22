@@ -41,7 +41,7 @@ do
     return true
   end
 
-  ---@param compitem optilsp.CompItem
+  ---@param compitem lsp.CompletionItem
   ---@return string?
   local function try_inserttext(compitem)
     if compitem.insertText == nil then return jelly.debug("no insertText") end
@@ -52,7 +52,7 @@ do
     return compitem.insertText
   end
 
-  ---@param compitem optilsp.CompItem
+  ---@param compitem lsp.CompletionItem
   ---@return string?
   local function try_textedit(compitem)
     if compitem.textEdit == nil then return jelly.debug("no textEdit") end
@@ -63,7 +63,7 @@ do
     return compitem.textEdit.newText
   end
 
-  ---@param compitem optilsp.CompItem
+  ---@param compitem lsp.CompletionItem
   ---@return true? @if did expanded a snip
   function expand_snip(compitem)
     local inserted = try_inserttext(compitem) or try_textedit(compitem)
@@ -73,7 +73,7 @@ do
   end
 end
 
----@param compitem optilsp.CompItem
+---@param compitem lsp.CompletionItem
 local function honor_additionaltextedits(compitem)
   local edits = compitem.additionalTextEdits
   if edits == nil then return end
@@ -83,7 +83,7 @@ local function honor_additionaltextedits(compitem)
 end
 
 local function on_complete_done()
-  ---@type optilsp.CompItem?
+  ---@type lsp.CompletionItem?
   local compitem = dictlib.get(vim.v.completed_item, "user_data", "nvim", "lsp", "completion_item")
   if compitem == nil then return end -- not produced by lsp
 
