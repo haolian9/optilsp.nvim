@@ -15,20 +15,22 @@ local parrot = require("parrot")
 local expand_snip
 do
   ---@param inserted string
+  ---@param snippet string
   ---@return true
-  local function main(inserted)
+  local function main(inserted, snippet)
     local winid = ni.get_current_win()
     local bufnr = ni.win_get_buf(winid)
     local cursor = wincursor.position(winid)
+    jelly.debug("cursor before parrot expanding: %s", cursor)
 
     local chirp
     do
       local normalized
       if prefer.bo(bufnr, "expandtab") then
         local tab = string.rep(" ", prefer.bo(bufnr, "tabstop"))
-        normalized = string.gsub(inserted, "\t", tab)
+        normalized = string.gsub(snippet, "\t", tab)
       else
-        normalized = inserted
+        normalized = snippet
       end
       assert(normalized)
       chirp = strlib.splits(normalized, "\n")
@@ -66,10 +68,12 @@ do
   ---@param compitem lsp.CompletionItem
   ---@return true? @if did expanded a snip
   function expand_snip(compitem)
-    local inserted = try_inserttext(compitem) or try_textedit(compitem)
-    if inserted == nil then return end
+    local snippet = try_inserttext(compitem) or try_textedit(compitem)
+    if snippet == nil then return end
 
-    main(inserted)
+    ---according vim.lsp.completion.get_completion_word()
+    ---it's .label rather than .insertText/.textEdit being inserted
+    main(compitem.label, snippet)
   end
 end
 
@@ -86,6 +90,7 @@ local function on_complete_done()
   ---@type lsp.CompletionItem?
   local compitem = dictlib.get(vim.v.completed_item, "user_data", "nvim", "lsp", "completion_item")
   if compitem == nil then return end -- not produced by lsp
+  jelly.debug("compitem: %s", compitem)
 
   expand_snip(compitem)
 

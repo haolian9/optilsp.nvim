@@ -21,7 +21,7 @@ end
 function M.init()
   M.init = nil
 
-  lsp.completion._lsp_to_complete_items = impl("comp_items_fuzzymatch")
+  -- lsp.completion._lsp_to_complete_items = impl("comp_items_fuzzymatch")
   lsp.util.apply_workspace_edit = impl("apply_workspace_edit")
 
   ---no defaults, i'll do it myself

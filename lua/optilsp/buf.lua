@@ -185,11 +185,15 @@ do
   ---@type {[string]: fun(str: string): fun(): string?}
   local Spliter = {}
   do
-    local function is_mark(line)
+    local function is_not_mark(line)
       local prefix = string.sub(line, 1, 3)
-      if prefix == "---" then return true end
-      if prefix == "```" then return true end
-      return false
+      if prefix == "---" then return false end
+      if prefix == "```" then return false end
+      return true
+    end
+
+    local function strip_uri(line) --
+      return string.gsub(line, [[%(http(s?)://[^)]+%)]], "")
     end
 
     function Spliter.luals(str)
@@ -197,9 +201,18 @@ do
         return function() end
       end
 
-      local source
-      source = strlib.iter_splits(str, "\n")
-      source = itertools.filter(source, function(line) return not is_mark(line) end)
+      local splits = strlib.splits(str, "\n")
+      --last line is just uri
+      if strlib.startswith(splits[#splits], "[View documents]") then splits[#splits] = nil end
+      --remove head/tail blank lines
+      for _ = 1, math.floor(#splits / 2) do
+        if splits[1] == "" then table.remove(splits, 1) end
+        if splits[#splits] == "" then splits[#splits] = nil end
+      end
+
+      local source = its(splits) --
+        :filter(is_not_mark)
+        :map(strip_uri)
 
       local blank_count = 0
 
@@ -231,9 +244,8 @@ do
         return function() end
       end
 
-      local source
-      source = strlib.iter_splits(str, "\n")
-      source = itertools.filter(source, function(line) return not is_mark(line) end)
+      local source = its(strlib.iter_splits(str, "\n"))
+      source:filter(is_not_mark)
 
       local blank_count = 0
 

@@ -96,6 +96,8 @@ return function(contents, syntax, opts)
     local wo = prefer.win(winid)
     wo.foldenable = false
     wo.wrap = true
+    wo.winfixheight = true --keep height when split below
+    wo.winfixwidth = true --keep width when split right
   end
 
   if #opts.close_events > 0 then --auto-close
