@@ -4,12 +4,21 @@ local augroups = require("infra.augroups")
 local ctx = require("infra.ctx")
 local dictlib = require("infra.dictlib")
 local ex = require("infra.ex")
+local fs = require("infra.fs")
 local jelly = require("infra.jellyfish")("optilsp.procs", "debug")
+local ni = require("infra.ni")
 local prefer = require("infra.prefer")
 
 local beckon_select = require("beckon.select")
 
 local lsp = vim.lsp
+
+---@param bufnr integer
+local function lsp_start(bufnr)
+  ---NB: prefer.bo(k,v) wont trigger FileType event
+  ---NB: re-calling bootstrap.langs.bufspecs.{lang}.lsp() should have no side effect
+  ctx.buf(bufnr, function() ex("setlocal", "filetype=" .. prefer.bo(bufnr, "filetype")) end)
+end
 
 local aug = augroups.Augroup("optilsp://procs")
 
@@ -91,7 +100,7 @@ do
   local function fmt(client) return string.format("#%d %s root=%s", client.id, client.name, client.root_dir) end
 
   function M.restart()
-    beckon_select(lsp.get_clients(), { prompt = "restart", format_item = fmt }, function(client)
+    beckon_select(lsp.get_clients(), { prompt = "lsp.restart", format_item = fmt }, function(client)
       if client == nil then return end
 
       local bufs = dictlib.keys(client.attached_buffers)
@@ -99,8 +108,7 @@ do
       ---start the client by re-triggering FileType event on each attached bufs formerly
       local function start()
         for _, bufnr in ipairs(bufs) do
-          ---NB: prefer.bo(k,v) wont trigger FileType event
-          ctx.buf(bufnr, function() ex("setlocal", "filetype=" .. prefer.bo(bufnr, "filetype")) end)
+          lsp_start(bufnr)
         end
       end
 
@@ -110,6 +118,40 @@ do
 
       jelly.debug("stopping client#%d", client.id)
       client:stop(true)
+    end)
+  end
+end
+
+do
+  local function resolve_bufname(bufnr)
+    local name = ni.buf_get_name(bufnr)
+    if name == "" then return "unnamed" end
+    return fs.basename(name)
+  end
+
+  ---@return {[1]:vim.lsp.Client,[2]:integer}[] links (client,bufnr)[]
+  local function enumerate_attach_links()
+    local links = {}
+    for _, client in pairs(lsp.get_clients()) do
+      for bufnr in pairs(client.attached_buffers) do
+        table.insert(links, { client, bufnr })
+      end
+    end
+    return links
+  end
+
+  local function fmt(link)
+    local client, bufnr = unpack(link)
+    return string.format("%s - %s (%s:%s)", client.name, resolve_bufname(bufnr), client.id, bufnr)
+  end
+
+  function M.detach()
+    local links = enumerate_attach_links()
+    if #links == 0 then return jelly.info("no links found") end
+    beckon_select(links, { prompt = "lsp.detach", format_item = fmt }, function(_, index)
+      if index == nil then return end
+      local client, bufnr = unpack(assert(links[index]))
+      lsp.buf_detach_client(bufnr, client.id)
     end)
   end
 end

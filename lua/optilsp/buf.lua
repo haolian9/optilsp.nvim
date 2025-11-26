@@ -4,11 +4,11 @@ local lspro = require("vim.lsp.protocol")
 local lsputil = require("vim.lsp.util")
 
 local dictlib = require("infra.dictlib")
-local itertools = require("infra.itertools")
 local its = require("infra.its")
 local jelly = require("infra.jellyfish")("optilsp", "info")
 local listlib = require("infra.listlib")
 local logging = require("infra.logging")
+local mi = require("infra.mi")
 local ni = require("infra.ni")
 local strlib = require("infra.strlib")
 
@@ -25,12 +25,48 @@ local PREPARE_RENAME = lspro.Methods.textDocument_prepareRename
 
 ---@param bufnr integer
 ---@param method string
+---@return vim.lsp.Client?
 local function get_responsible_client(bufnr, method)
   local clients = lsp.get_clients({ bufnr = bufnr, method = method })
-  if #clients == 0 then vim.info("no available langserver for %s", method) end
+  if #clients == 0 then return jelly.info("no available langserver for %s", method) end
   local client = clients[1]
   if #clients > 1 then jelly.info("dispatch %s to langserver #id %s", method, client.id, client.name) end
   return client
+end
+
+local LastWin
+do
+  ---@class optilsp.buf.LastWin
+  ---@field opid string
+  ---@field winid integer
+  local impl = {}
+  impl.__index = impl
+
+  ---@param winid integer
+  ---@param bufnr integer
+  ---@param position lsp.TextDocumentPositionParams
+  ---@return string
+  function impl.generate_opid(winid, bufnr, position)
+    local ctick = ni.buf_get_changedtick(bufnr)
+    local parts = { winid, position.position.line, position.position.character, bufnr, ctick }
+    return table.concat(parts, ":")
+  end
+
+  ---@param opid string
+  ---@return boolean
+  function impl:is_reusable(opid)
+    if opid ~= self.opid then return false end
+    if not ni.win_is_valid(self.winid) then return false end
+    if mi.win_is_landed(self.winid) then return false end
+    return true
+  end
+
+  function impl:remember(opid, winid)
+    self.opid = opid
+    self.winid = winid
+  end
+
+  function LastWin() return setmetatable({}, impl) end
 end
 
 do
@@ -110,13 +146,14 @@ do
     local winid = ni.get_current_win()
     local bufnr = ni.win_get_buf(winid)
     local client = get_responsible_client(bufnr, RENAME)
+    if client == nil then return end
 
     ---@type optilsp.rename.Context
     local ctx = { client = client, winid = winid, bufnr = bufnr, new_name = new_name, cword = vim.fn.expand("<cword>") }
 
     if new_name then return rename(ctx) end
 
-    if client.supports_method(PREPARE_RENAME) then
+    if client:supports_method(PREPARE_RENAME, bufnr) then
       preapre_routine(ctx)
     else
       direct_routine(ctx)
@@ -155,6 +192,8 @@ do
     return trim_inline_ln(dictlib.iter_keys(set))
   end
 
+  local lastwin = LastWin()
+
   local function on_response(result, _, opts)
     opts.close_events = { "InsertLeave" }
 
@@ -173,10 +212,16 @@ do
     local bufnr = ni.win_get_buf(winid)
 
     local client = get_responsible_client(bufnr, SIGNATURE)
+    if client == nil then return end
+
     local params = lsputil.make_position_params(winid, client.offset_encoding)
+    local opid = lastwin.generate_opid(winid, bufnr, params)
+    if lastwin:is_reusable(opid) then return ni.set_current_win(lastwin.winid) end
+
     client:request(SIGNATURE, params, function(err, result, ctx)
       if err ~= nil then return jelly.err("err on signature_help: %s", err) end
-      on_response(result, ctx, opts)
+      local _, hover_winid = on_response(result, ctx, opts)
+      lastwin:remember(opid, hover_winid)
     end, bufnr)
   end
 end
@@ -296,6 +341,8 @@ do
     return lines
   end
 
+  local lastwin = LastWin()
+
   local function on_response(result, ctx, opts)
     log.debug("hover result: %s", result)
     if not (result and result.contents) then return jelly.info("No information available") end
@@ -321,10 +368,16 @@ do
     local bufnr = ni.win_get_buf(winid)
 
     local client = get_responsible_client(bufnr, HOVER)
+    if client == nil then return end
+
     local params = lsputil.make_position_params(winid, client.offset_encoding)
+    local opid = lastwin.generate_opid(winid, bufnr, params)
+    if lastwin:is_reusable(opid) then return ni.set_current_win(lastwin.winid) end
+
     client:request(HOVER, params, function(err, result, ctx)
       if err ~= nil then return jelly.err("err on hover: %s", err) end
-      on_response(result, ctx, opts)
+      local _, hover_winid = on_response(result, ctx, opts)
+      lastwin:remember(opid, hover_winid)
     end, bufnr)
   end
 end

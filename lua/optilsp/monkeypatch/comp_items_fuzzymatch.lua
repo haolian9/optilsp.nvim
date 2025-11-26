@@ -13,25 +13,25 @@ local function extract_compitems(result)
   end
 end
 
----stolen from lsp._completion.get_completion_word
+---stolen from lsp.completion.get_completion_word
 ---@return string
 local function get_completion_word(item)
-  if item.textEdit ~= nil and item.textEdit.newText ~= nil and item.textEdit.newText ~= "" then
-    local insert_text_format = protocol.InsertTextFormat[item.insertTextFormat]
-    if insert_text_format == "PlainText" or insert_text_format == nil then
-      return item.textEdit.newText
-    else
-      return lspsnip.parse(item.textEdit.newText)
-    end
-  elseif item.insertText ~= nil and item.insertText ~= "" then
-    local insert_text_format = protocol.InsertTextFormat[item.insertTextFormat]
-    if insert_text_format == "PlainText" or insert_text_format == nil then
-      return item.insertText
-    else
-      return lspsnip.parse(item.insertText)
-    end
+  if item.insertTextFormat == protocol.InsertTextFormat.Snippet then
+    return item.label
+  elseif item.textEdit then
+    local word = item.textEdit.newText
+    return word:match("^(%S*)") or word
+  elseif item.insertText and item.insertText ~= "" then
+    return item.insertText
+  else
+    return item.label
   end
-  return item.label
+end
+
+local function is_deprecated(item)
+  if item.deprecated then return true end
+  if item.tags and listlib.contains(item.tags, protocol.CompletionTag.Deprecated) then return true end
+  return false
 end
 
 --rewrite of vim.lsp.completion._lsp_to_complete_items
@@ -52,17 +52,18 @@ return function(result, prefix)
   local matches = {}
   for i, compitem in ipairs(compitems) do
     local word = get_completion_word(compitem)
+    --:h complete-items
     matches[i] = {
       word = word,
       kind = protocol.CompletionItemKind[compitem.kind] or "Unknown",
-      abbr = "", -- useless abbr
-      --todo: use completeopt=popup instead
-      menu = "", -- no enough room for menu
-      info = "", -- not enough room for info
+      abbr = nil,
+      menu = nil, -- no enough room for popup menu
+      info = nil, -- not enough room for preview info
       icase = 1,
       dup = 0, -- no duplicates
       empty = 0, -- no empty entry
       user_data = { nvim = { lsp = { completion_item = compitem } } },
+      abbr_hlgroup = is_deprecated(compitem) and "DiagnosticDeprecated" or nil,
     }
   end
 

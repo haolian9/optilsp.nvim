@@ -98,6 +98,7 @@ return function(contents, syntax, opts)
     wo.wrap = true
     wo.winfixheight = true --keep height when split below
     wo.winfixwidth = true --keep width when split right
+    wo.winfixbuf = true
   end
 
   if #opts.close_events > 0 then --auto-close

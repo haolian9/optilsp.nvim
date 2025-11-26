@@ -4,11 +4,13 @@ local lsputil = require("vim.lsp.util")
 
 local augroups = require("infra.augroups")
 local dictlib = require("infra.dictlib")
-local jelly = require("infra.jellyfish")("optilsp.snip", "info")
+local logging = require("infra.logging")
 local ni = require("infra.ni")
 local prefer = require("infra.prefer")
 local strlib = require("infra.strlib")
 local wincursor = require("infra.wincursor")
+
+local log = logging.newlogger("optilsp.snip", "info")
 
 local parrot = require("parrot")
 
@@ -21,7 +23,6 @@ do
     local winid = ni.get_current_win()
     local bufnr = ni.win_get_buf(winid)
     local cursor = wincursor.position(winid)
-    jelly.debug("cursor before parrot expanding: %s", cursor)
 
     local chirp
     do
@@ -46,10 +47,10 @@ do
   ---@param compitem lsp.CompletionItem
   ---@return string?
   local function try_inserttext(compitem)
-    if compitem.insertText == nil then return jelly.debug("no insertText") end
-    if compitem.insertTextFormat ~= 2 then return jelly.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
+    if compitem.insertText == nil then return log.debug("no insertText") end
+    if compitem.insertTextFormat ~= 2 then return log.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
     --workaround of https://github.com/LuaLS/lua-language-server/issues/2312
-    if not strlib.contains(compitem.insertText, "$") then return jelly.debug("has no $ sign") end
+    if not strlib.contains(compitem.insertText, "$") then return log.debug("has no $ sign") end
 
     return compitem.insertText
   end
@@ -57,10 +58,10 @@ do
   ---@param compitem lsp.CompletionItem
   ---@return string?
   local function try_textedit(compitem)
-    if compitem.textEdit == nil then return jelly.debug("no textEdit") end
-    if compitem.insertTextFormat ~= 2 then return jelly.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
+    if compitem.textEdit == nil then return log.debug("no textEdit") end
+    if compitem.insertTextFormat ~= 2 then return log.debug("not a snippet textedit") end -- the magic number of InsertTextFormat.Snippet
     --workaround of https://github.com/LuaLS/lua-language-server/issues/2312
-    if not strlib.contains(compitem.textEdit.newText, "$") then return jelly.debug("has no $ sign") end
+    if not strlib.contains(compitem.textEdit.newText, "$") then return log.debug("has no $ sign") end
 
     return compitem.textEdit.newText
   end
@@ -71,8 +72,7 @@ do
     local snippet = try_inserttext(compitem) or try_textedit(compitem)
     if snippet == nil then return end
 
-    ---according vim.lsp.completion.get_completion_word()
-    ---it's .label rather than .insertText/.textEdit being inserted
+    ---align with optilsp.monkeypatch.comp_items_fuzzymatch
     main(compitem.label, snippet)
   end
 end
@@ -90,7 +90,7 @@ local function on_complete_done()
   ---@type lsp.CompletionItem?
   local compitem = dictlib.get(vim.v.completed_item, "user_data", "nvim", "lsp", "completion_item")
   if compitem == nil then return end -- not produced by lsp
-  jelly.debug("compitem: %s", compitem)
+  log.debug("compitem: %s", compitem)
 
   expand_snip(compitem)
 
