@@ -55,6 +55,7 @@ do
   ---@param opid string
   ---@return boolean
   function impl:is_reusable(opid)
+    if self.opid == nil or self.winid == nil then return false end
     if opid ~= self.opid then return false end
     if not ni.win_is_valid(self.winid) then return false end
     if mi.win_is_landed(self.winid) then return false end
