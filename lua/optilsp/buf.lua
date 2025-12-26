@@ -311,6 +311,7 @@ do
 
     Spliter.zls = general
     Spliter.pyright = general
+    Spliter.ty = general
     Spliter.clangd = general
     Spliter.gopls = general
     Spliter.phpactor = general

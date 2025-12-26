@@ -99,6 +99,13 @@ do
   ---@return string
   local function fmt(client) return string.format("#%d %s root=%s", client.id, client.name, client.root_dir) end
 
+  function M.kill()
+    beckon_select(lsp.get_clients(), { prompt = "lsp.kill", format_item = fmt }, function(client)
+      if client == nil then return end
+      client:stop()
+    end)
+  end
+
   function M.restart()
     beckon_select(lsp.get_clients(), { prompt = "lsp.restart", format_item = fmt }, function(client)
       if client == nil then return end
